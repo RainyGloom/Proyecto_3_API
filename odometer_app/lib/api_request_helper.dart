@@ -1,6 +1,8 @@
 import 'package:odometer_app/content/vehicle.dart';
+import 'content/user.dart';
 import 'package:http/http.dart';
 import 'dart:convert';
+import 'api_database_helper.dart';
 
 class AccessToken
 {
@@ -20,10 +22,38 @@ class APIRequestHelper {
   final String uri;
   final String clientId;
   final String clientSecret;
+  late User user;
   List<Vehicle> vehicles = [];
   String? authCode;
   AccessToken? accessToken;
   static late APIRequestHelper instance;
+  
+  static Future<void> getAccessToken() async
+  {
+    Client client = Client();
+
+    var authEncode = base64.encode(utf8.encode('${APIRequestHelper.instance.clientId}:${APIRequestHelper.instance.clientSecret}'));
+    final Response response = await client.post(Uri.parse('https://auth.smartcar.com/oauth/token'), headers: 
+      {
+        'Authorization': 'Basic $authEncode',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=authorization_code&code=${APIRequestHelper.instance.authCode}&redirect_uri=${APIRequestHelper.instance.uri}'
+    );
+
+    if(response.statusCode == 200)
+    {
+      final data = json.decode(response.body);
+      APIRequestHelper.instance.accessToken = AccessToken(
+        value: data['access_token'], 
+        type:  data['token_type'], 
+        expiresIn: data['expires_in'], 
+        refreshValue: data['refresh_token']
+      );
+    }
+
+    print("Response: " + response.statusCode.toString());
+  }
   
   static Future<void> loadVehicles() async
   {
@@ -44,13 +74,24 @@ class APIRequestHelper {
         Vehicle? vehicle;
         do
         {
-          vehicle = await Vehicle.onlineRequest(data['vehicles'][0]);
+          vehicle = await getVehicle(data['vehicles'][0]);
           if(vehicle != null)
           {
             APIRequestHelper.instance.vehicles.add(vehicle);
             print(vehicle.id);
           }
         }while(vehicle == null);
+      }
+
+      List<Vehicle> vehicles = await APIDatabaseHelper.getVehicles();
+
+      for(int i = 0; i < vehicles.length; i++)
+      {
+        if(APIRequestHelper.instance.user.id != vehicles[i].userID 
+          || vehicles[i].id != APIRequestHelper.instance.vehicles[i].id)
+        {
+          await APIDatabaseHelper.insertVehicle(vehicles[i]);
+        }
       }
       print(data.toString());
     }
@@ -80,6 +121,62 @@ class APIRequestHelper {
       }
     }
 
+    return null;
+  }
+
+  static Future<User?> getUser() async
+  {
+    
+    Client client = Client();
+
+    final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/user"),
+      headers: {
+        'Authorization': 'Bearer ${APIRequestHelper.instance.accessToken!.value}'
+      }
+    );
+
+    if(response.statusCode == 200)
+    {
+      var data = json.decode(response.body);
+      User user = User(id: data['id']);
+      List<User> users = await APIDatabaseHelper.getUsers();
+      bool newUser = true;
+      for(int i = 0; i < users.length; i++)
+      {
+        if(users[i].id == user.id)
+        {
+          newUser = false;
+          break;
+        }
+      }
+      if(newUser)
+      {
+        APIDatabaseHelper.insertUser(user);
+      }
+      APIRequestHelper.instance.user = user;
+    }
+
+    print("Respuesta user: " + response.statusCode.toString());
+    return null;
+  }
+  
+  static Future<Vehicle?> getVehicle(String id) async
+  {
+    Client client = Client();
+
+    final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/vehicles/$id"),
+      headers: {
+        'Authorization': 'Bearer ${APIRequestHelper.instance.accessToken!.value}'
+      }
+    );
+
+    if(response.statusCode == 200)
+    {
+      var data = json.decode(response.body);
+      return Vehicle(userID: APIRequestHelper.instance.user.id, id: data['id'], make: data['make'], model: data['model'], year: data['year']);
+    }
+
+    print("Respuesta vehiculo $id: " + response.statusCode.toString());
     return null;
   }
 }

@@ -1,0 +1,14 @@
+CREATE TABLE user(
+    id VARCHAR NOT NULL
+);
+
+CREATE TABLE vehicle( 
+    userID VARCHAR NOT NULL,
+    id VARCHAR NOT NULL, 
+    make VARCHAR, 
+    model VARCHAR,
+    year YEAR, 
+    FOREIGN KEY(userID) REFERENCES user(id),
+    PRIMARY KEY(userID, id)
+);
+

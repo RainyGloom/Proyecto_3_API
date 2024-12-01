@@ -3,18 +3,18 @@ import 'package:odometer_app/api_request_helper.dart';
 import 'package:odometer_app/content/vehicle.dart';
 import 'dart:async';
 
-class HomePage extends StatefulWidget
+class VehicleCollectionPage extends StatefulWidget
 {
-  const HomePage({super.key});
+  const VehicleCollectionPage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<VehicleCollectionPage> createState() => _VehicleCollectionPageState();
 }
 
 
-class _HomePageState extends State<HomePage>
+class _VehicleCollectionPageState extends State<VehicleCollectionPage>
 {
-  _HomePageState();
+  _VehicleCollectionPageState();
   double result = 0;
   double? _distance;
   bool _init = false;
@@ -69,11 +69,6 @@ class _HomePageState extends State<HomePage>
         {
           if(snapshot.connectionState == ConnectionState.done)
           {
-            if(!_init)
-            {
-              _setDistance(Timer(Duration.zero, () => {}));
-              _init = true;
-            }
             if (snapshot.hasError) {
               return Center(
                 child: Text(
@@ -82,16 +77,20 @@ class _HomePageState extends State<HomePage>
                 ),
               );
             }
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: 
-                  [
-                    Text('Usuario: ${APIRequestHelper.instance.user.id}'),
-                    Text("Velocidad: ${result.toString()}"),
-                  ],
-                ),
-              );
+            return Center(
+              child: ListView.builder(
+                itemCount: APIRequestHelper.instance.vehicles.length,
+                itemBuilder: (context, index)
+                {
+                  return Card(
+                    child: TextButton(
+                      onPressed: () => {},
+                      child: Text('${index + 1}. ${APIRequestHelper.instance.vehicles[index].make}')
+                    ),
+                  );
+                }
+              ),
+            );
           }
           return Center(
             child: CircularProgressIndicator(),

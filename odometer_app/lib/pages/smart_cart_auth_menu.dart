@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smartcar_auth/flutter_smartcar_auth.dart';
+import 'package:odometer_app/api_database_helper.dart';
 import 'package:odometer_app/api_request_helper.dart';
+import 'package:odometer_app/content/user.dart';
 import 'package:odometer_app/pages/home_page.dart';
 import 'dart:convert';
 import 'package:http/http.dart';
+import 'package:odometer_app/pages/vehicle_collection_page.dart';
 
 
 class SmartcarAuthMenu extends StatefulWidget {
@@ -15,33 +18,6 @@ class SmartcarAuthMenu extends StatefulWidget {
 
 class _SmartcarAuthMenuState extends State<SmartcarAuthMenu> {
   
-  static Future<void> _getAccessToken() async
-  {
-    Client client = Client();
-
-    var authEncode = base64.encode(utf8.encode('${APIRequestHelper.instance.clientId}:${APIRequestHelper.instance.clientSecret}'));
-    final Response response = await client.post(Uri.parse('https://auth.smartcar.com/oauth/token'), headers: 
-      {
-        'Authorization': 'Basic $authEncode',
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'grant_type=authorization_code&code=${APIRequestHelper.instance.authCode}&redirect_uri=${APIRequestHelper.instance.uri}'
-    );
-
-    if(response.statusCode == 200)
-    {
-      final data = json.decode(response.body);
-      APIRequestHelper.instance.accessToken = AccessToken(
-        value: data['access_token'], 
-        type:  data['token_type'], 
-        expiresIn: data['expires_in'], 
-        refreshValue: data['refresh_token']
-      );
-    }
-
-    print("Response: " + response.statusCode.toString());
-  }
-  
   @override
   void initState() {
     super.initState();
@@ -51,7 +27,7 @@ class _SmartcarAuthMenuState extends State<SmartcarAuthMenu> {
 
   String buttonName = "No load";
 
-  void _handleSmartcarResponse(SmartcarAuthResponse response) {
+  Future<void> _handleSmartcarResponse(SmartcarAuthResponse response) async{
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     switch (response) {
@@ -68,7 +44,23 @@ class _SmartcarAuthMenuState extends State<SmartcarAuthMenu> {
             ),
             actions: const [SizedBox.shrink()],
           ),
+        
         );
+        do
+        {
+          await APIRequestHelper.getAccessToken();
+          if(APIRequestHelper.instance.accessToken != null)
+          {
+            do
+            {
+              await APIRequestHelper.getUser();
+              if(APIRequestHelper.instance.user != null)
+              {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => VehicleCollectionPage()));
+              }
+            }while(APIRequestHelper.instance.user == null);
+          }
+        }while(APIRequestHelper.instance.accessToken == null);
         break;
       case SmartcarAuthFailure failure:
         scaffoldMessenger.showMaterialBanner(
@@ -107,14 +99,7 @@ class _SmartcarAuthMenuState extends State<SmartcarAuthMenu> {
             MaterialButton(
               onPressed: () async {
                 await Smartcar.launchAuthFlow();
-                do
-                {
-                  await _getAccessToken();
-                  if(APIRequestHelper.instance.accessToken != null)
-                  {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-                  }
-                }while(APIRequestHelper.instance.accessToken == null);
+
               },
               child: const Text("Launch Auth Flow"),
             ),

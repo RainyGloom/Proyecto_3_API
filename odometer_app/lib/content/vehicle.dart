@@ -4,29 +4,22 @@ import 'dart:convert';
 
 class Vehicle 
 {
-  const Vehicle({required this.id, required this.make, required this.model, required this.year});
+  const Vehicle({required this.userID, required this.id, required this.make, required this.model, required this.year});
+  final String userID;
   final String id;
   final String make;
   final String model;
   final int year;
   
-  static Future<Vehicle?> onlineRequest(String id) async
+  Map<String, Object> toMap()
   {
-    Client client = Client();
-
-    final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/vehicles/$id"),
-      headers: {
-        'Authorization': 'Bearer ${APIRequestHelper.instance.accessToken!.value}'
-      }
-    );
-
-    if(response.statusCode == 200)
+    return 
     {
-      var data = json.decode(response.body);
-      return Vehicle(id: data['id'], make: data['make'], model: data['model'], year: data['year']);
-    }
-
-    print("Respuesta vehiculo $id: " + response.statusCode.toString());
-    return null;
+      'userID': userID,
+      'id': id,
+      'make': make,
+      'model': model,
+      'year': year,
+    };
   }
 }
