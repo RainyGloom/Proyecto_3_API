@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="smartcar_auth_scheme">sc1ce2d74b-1016-454a-baa8-f8a1592bc456</string>
+    <string name="client_id">1ce2d74b-1016-454a-baa8-f8a1592bc456</string>
+    <string name="app_server">http://10.0.2.2:8000</string>
+</resources>
