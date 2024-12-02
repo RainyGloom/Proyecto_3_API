@@ -7,6 +7,7 @@ import 'package:odometer_app/pages/settings_page.dart';
 import 'package:odometer_app/global_settings.dart';
 import 'package:flutter_smartcar_auth/flutter_smartcar_auth.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({Key? key}) : super(key: key);
@@ -18,21 +19,67 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   double? _lastDistance;
   double _currentSpeed = 0;
-  double _currentRPM = 0;
+  double _currentFuelPercent = 0;
   double _minSpeed = 0;
   double _maxSpeed = 0;
   DateTime? _lastTime;
   String _connect = "Conectar vehículo";
   MeasurementUnit _unit = MeasurementUnit.kmh; // Unidad seleccionada (por defecto KM/H)
   Timer? _timer;
+  FlutterRingtonePlayer? _player;
+  Widget? _dialog;
 
   @override
-  void initState() {
+  void initState() 
+  {
     super.initState();
     _loadSettings(); 
     Smartcar.onSmartcarResponse.listen(_handleSmartcarResponse);
+    Timer.periodic(Duration(seconds: 1),
+    (timer) async
+    {
+      if(GlobalSettings().convertSpeed(_currentSpeed) > GlobalSettings().convertSpeed(130))
+      {
+        if(_player == null)
+        {
+          _player = FlutterRingtonePlayer();
+          FlutterRingtonePlayer().play(
+            android: AndroidSounds.alarm,
+            ios: IosSounds.electronic,
+            looping: true,
+          );
+          _dialog = await showAlertDialog(context);
+        }
+      }
+      else if(_player != null)
+      {
+        if(_dialog != null)
+        {
+          Navigator.pop(context);
+          _dialog = null;
+        }
+        _player!.stop();
+        _player = null;
+      }
+    });
   }
 
+  Future<Widget> showAlertDialog(BuildContext context) async{
+    AlertDialog alert = AlertDialog(
+      backgroundColor: GlobalSettings().foreColor,
+      title: const Text("Exceso de velocidad", style: TextStyle(color: Colors.black),),
+      content: const Text('Reduzca la velocidad', style: TextStyle(color: Colors.black),),
+    );
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+
+    return alert;
+  }
   Future<void> _handleSmartcarResponse(SmartcarAuthResponse response) async{
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     switch (response) {
@@ -138,57 +185,74 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _startRealTimeUpdates() {
-      _timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      if (APIRequestHelper.instance.vehicles.isNotEmpty) {
-        // VELOCIDAAD
-        double? distance = await APIRequestHelper.getOdometer(APIRequestHelper.instance.vehicles.first);
-        if(_lastDistance != null)
+    Timer.periodic(const Duration(seconds: 5), 
+      (timer) async
+      {
+        double? percent = await APIRequestHelper.getFuelRemaining(APIRequestHelper.instance.vehicles[0]);
+        if(percent != null)
         {
-          if(distance != null)
-          {
-            final deltaTime = DateTime.now().difference(_lastTime!);
-            if(distance != _lastDistance)
-            {
-              double speed = (distance - _lastDistance!) / (deltaTime.inMilliseconds) * 3600000;
-              if(speed >= 0)
-              {
-                setState((){
-                    _lastTime = DateTime.now();
-                    _currentSpeed = speed; // registrar velocidad en el historial
-                    _minSpeed = GlobalSettings().minSpeed;
-                    _maxSpeed = GlobalSettings().maxSpeed;
-                    GlobalSettings().addSpeed(APIRequestHelper.instance.vehicles[0], _currentSpeed, _lastTime!);
-                    _lastDistance = distance;
-                });
-              }
-            }
-            else
-            {
-              if(deltaTime.inMinutes >= 5)
-              {
-                setState(() {
-                  _lastTime = DateTime.now();
-                  _currentSpeed = GlobalSettings().convertSpeed(0); // conversión unidad medida
-                });
-              }
-            }
-          }
+          _currentFuelPercent = percent;
         }
         else
         {
-          _lastDistance = distance;
-          _lastTime = DateTime.now();
+          percent = await APIRequestHelper.getEVRemaing(APIRequestHelper.instance.vehicles[0]);
+          _currentFuelPercent = percent ?? 0;
         }
-
-        // RPM
-        /*double? rpm = await APIRequestHelper.getVehicleRPM(vehicleId);
-        if (rpm != null) {
-          setState(() {
-            _currentRPM = rpm;
-          });
-        }*/
       }
-    });
+    );
+    _timer = Timer.periodic(const Duration(seconds: 5), 
+      (timer) async {
+        if (APIRequestHelper.instance.vehicles.isNotEmpty) {
+          // VELOCIDAAD
+          double? distance = await APIRequestHelper.getOdometer(APIRequestHelper.instance.vehicles.first);
+          if(_lastDistance != null)
+          {
+            if(distance != null)
+            {
+              final deltaTime = DateTime.now().difference(_lastTime!);
+              if(distance != _lastDistance)
+              {
+                double speed = (distance - _lastDistance!) / (deltaTime.inMilliseconds) * 3600000;
+                if(speed >= 0)
+                {
+                  setState((){
+                      _lastTime = DateTime.now();
+                      _currentSpeed = speed; // registrar velocidad en el historial
+                      _minSpeed = GlobalSettings().minSpeed;
+                      _maxSpeed = GlobalSettings().maxSpeed;
+                      GlobalSettings().addSpeed(APIRequestHelper.instance.vehicles[0], _currentSpeed, _lastTime!);
+                      _lastDistance = distance;
+                  });
+                }
+              }
+              else
+              {
+                if(deltaTime.inMinutes >= 5)
+                {
+                  setState(() {
+                    _lastTime = DateTime.now();
+                    _currentSpeed = GlobalSettings().convertSpeed(0); // conversión unidad medida
+                  });
+                }
+              }
+            }
+          }
+          else
+          {
+            _lastDistance = distance;
+            _lastTime = DateTime.now();
+          }
+
+          // RPM
+          /*double? rpm = await APIRequestHelper.getVehicleRPM(vehicleId);
+          if (rpm != null) {
+            setState(() {
+              _currentRPM = rpm;
+            });
+          }*/
+        }
+      }
+    );
   }
 
   @override
@@ -204,7 +268,18 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text('DRIVEX', style: TextStyle(color: Colors.black)),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: 
+          [
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: Image.asset('assets/icons/drivex_icon.png')
+            ), 
+            Text('DriveX', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))
+          ]
+        ),
         backgroundColor: GlobalSettings().foreColor,
         centerTitle: true,
         elevation: 0,
@@ -290,7 +365,7 @@ class _MainPageState extends State<MainPage> {
               Column(
                 children: [
                   Text(
-                    _currentRPM.toStringAsFixed(1),
+                    '${_currentFuelPercent.toStringAsFixed(1)}%',
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
@@ -298,7 +373,7 @@ class _MainPageState extends State<MainPage> {
                     ),
                   ),
                   Text(
-                    "RPM",
+                    "Fuel/Battery",
                     style: TextStyle(
                       fontSize: 16,
                       color: GlobalSettings().foreColor,
@@ -314,7 +389,7 @@ class _MainPageState extends State<MainPage> {
                     ),
                     child: Center(
                       child: Icon(
-                        Icons.rotate_right,
+                        Icons.local_gas_station,
                         size: 40,
                         color: GlobalSettings().foreColor,
                       ),

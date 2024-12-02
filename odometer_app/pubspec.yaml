@@ -10,7 +10,8 @@ dependencies:
   connectivity_plus: ^6.1.0
   flutter:
     sdk: flutter
-  flutter_curl: ^0.3.0
+  flutter_launcher_icons: ^0.14.1
+  flutter_ringtone_player: ^4.0.0+3
   flutter_smartcar_auth: ^2.0.0
   http: ^1.2.2
   intl: ^0.20.1
@@ -28,4 +29,5 @@ dev_dependencies:
 flutter:
   assets:
     - assets/database_create.txt
+    - assets/icons/drivex_icon.png
   uses-material-design: true

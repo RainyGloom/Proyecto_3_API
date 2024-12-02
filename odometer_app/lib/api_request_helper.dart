@@ -228,4 +228,54 @@ class APIRequestHelper {
     print("Respuesta vehiculo $id: " + response.statusCode.toString());
     return null;
   }
+
+  static Future<double?> getFuelRemaining(Vehicle vehicle) async
+  {
+    if(!instance.isConnected())
+    {
+      return null;
+    }
+
+    Client client = Client();
+
+    final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/vehicles/${vehicle.id}/fuel" ),
+      headers: {
+        'Authorization': 'Bearer ${APIRequestHelper.instance.accessToken!.value}'
+      }
+    );
+
+    if(response.statusCode == 200)
+    {
+      var data = json.decode(response.body);
+      return data['percentRemaining'] * 100;
+    };
+
+    print("Respuesta combustible" + response.statusCode.toString());
+    return null;
+  }
+
+  static Future<double?> getEVRemaing(Vehicle vehicle) async
+  {
+    if(!instance.isConnected())
+    {
+      return null;
+    }
+
+    Client client = Client();
+
+    final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/vehicles/${vehicle.id}/battery" ),
+      headers: {
+        'Authorization': 'Bearer ${APIRequestHelper.instance.accessToken!.value}'
+      }
+    );
+
+    if(response.statusCode == 200)
+    {
+      var data = json.decode(response.body);
+      return data['percentRemaining'] * 100;
+    };
+
+    print("Respuesta bateria" + response.statusCode.toString());
+    return null;
+  }
 }

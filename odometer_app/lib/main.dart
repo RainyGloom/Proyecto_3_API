@@ -20,6 +20,8 @@ Future<void> main() async{
         SmartcarPermission.readLocation, 
         SmartcarPermission.readVehicleInfo, 
         SmartcarPermission.readSpeedometer,
+        SmartcarPermission.readBattery,
+        SmartcarPermission.readFuel
       ],
       mode: SmartcarMode.test,
     ),
