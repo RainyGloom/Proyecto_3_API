@@ -1,3 +1,5 @@
+import 'package:odometer_app/content/speed_entry.dart';
+
 import 'content/vehicle.dart';
 import 'content/user.dart';
 import 'package:sqflite/sqflite.dart';
@@ -7,12 +9,12 @@ import 'package:flutter/services.dart' show rootBundle;
 class APIDatabaseHelper
 {
   static Future<Database> database() async {
-    String cmd = await rootBundle.loadString('assets/database_create.txt');
     return openDatabase(
-      join(await getDatabasesPath(), 'api_database1.db'),
+      join(await getDatabasesPath(), 'smart_car_database1.db'),
       onCreate: (db, version) async {
         await db.execute('CREATE TABLE user(id VARCHAR NOT NULL)');
         await db.execute('CREATE TABLE vehicle(userID VARCHAR NOT NULL, id VARCHAR NOT NULL, make VARCHAR, model VARCHAR, year YEAR, FOREIGN KEY(userID) REFERENCES user(id), PRIMARY KEY(userID, id))');
+        await db.execute('CREATE TABLE speedEntry(vehicleID VARCHAR NOT NULL, dateTime VARCHAR NOT NULL, speed DOUBLE NOT NULL, FOREIGN KEY(vehicleID) REFERENCES vehicle(id), PRIMARY KEY(vehicleID, dateTime))');
       },
       version: 1,
     );
@@ -64,5 +66,20 @@ class APIDatabaseHelper
   static Future<void> deleteVehicle(String id) async {
     final db = await database(); 
     await db.delete('vehicle', where: 'id = ?', whereArgs: [id]);
+  }
+
+  static Future<List<SpeedEntry>> getSpeedEntries() async
+  {
+    final db = await database();
+    final List<Map<String, dynamic>> maps = await db.query('speedEntry');
+    return List.generate(maps.length, (i) {
+      return SpeedEntry(vehicleID: maps[i]['vehicleID'], dateTime: DateTime.parse(maps[i]['dateTime']), speed: maps[i]['speed']);
+    });
+  }
+
+  static Future<void> insertSpeedEntry(SpeedEntry entry) async {
+    final db = await database();
+    await db.insert('speedEntry', entry.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 }

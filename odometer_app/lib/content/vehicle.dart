@@ -22,4 +22,10 @@ class Vehicle
       'year': year,
     };
   }
+
+  @override
+  String toString()
+  {
+    return '$year $make $model';
+  }
 }

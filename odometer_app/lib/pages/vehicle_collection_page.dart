@@ -39,11 +39,11 @@ class _VehicleCollectionPageState extends State<VehicleCollectionPage>
     {
       _secondsOnFail = 0;
       _requestStarted = true;
-      _distance = await APIRequestHelper.getOdometerDistance(vehicles[0].id);
+      _distance = await APIRequestHelper.getOdometer(vehicles[0]);
     }
     else
     {
-      double? next = await APIRequestHelper.getOdometerDistance(vehicles[0].id);
+      double? next = await APIRequestHelper.getOdometer(vehicles[0]);
       if(next != null)
       {
         result = (next - _distance!) / 10 * (1 + _secondsOnFail);

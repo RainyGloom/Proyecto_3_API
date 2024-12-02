@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:odometer_app/api_request_helper.dart';
-import 'pages/smart_cart_auth_menu.dart';
+import 'package:odometer_app/global_settings.dart';
+import 'package:odometer_app/pages/main_page.dart';
 import 'package:flutter_smartcar_auth/flutter_smartcar_auth.dart';
 
 Future<void> main() async{
@@ -14,10 +15,16 @@ Future<void> main() async{
     configuration: SmartcarConfig(
       clientId: APIRequestHelper.instance.clientId,
       redirectUri: APIRequestHelper.instance.uri,
-      scopes: [SmartcarPermission.readOdometer, SmartcarPermission.readLocation, SmartcarPermission.readVehicleInfo],
+      scopes: [
+        SmartcarPermission.readOdometer, 
+        SmartcarPermission.readLocation, 
+        SmartcarPermission.readVehicleInfo, 
+        SmartcarPermission.readSpeedometer,
+      ],
       mode: SmartcarMode.test,
     ),
   );
+  await GlobalSettings().loadEntries();
   runApp(const MainApp());
 }
 
@@ -28,9 +35,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       home: Scaffold(
-        body: Center(
-          child: SmartcarAuthMenu(),
-        ),
+        body: MainPage(),
       ),
     );
   }

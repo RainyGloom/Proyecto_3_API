@@ -22,11 +22,13 @@ class APIRequestHelper {
   final String uri;
   final String clientId;
   final String clientSecret;
-  late User user;
+  User? user;
   List<Vehicle> vehicles = [];
   String? authCode;
   AccessToken? accessToken;
   static late APIRequestHelper instance;
+
+  bool isConnected() => accessToken != null;
   
   static Future<void> getAccessToken() async
   {
@@ -57,6 +59,11 @@ class APIRequestHelper {
   
   static Future<void> loadVehicles() async
   {
+    if(!instance.isConnected())
+    {
+      return;
+    }
+
     Client client = Client();
 
     final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/vehicles"),
@@ -87,21 +94,54 @@ class APIRequestHelper {
 
       for(int i = 0; i < vehicles.length; i++)
       {
-        if(APIRequestHelper.instance.user.id != vehicles[i].userID 
-          || vehicles[i].id != APIRequestHelper.instance.vehicles[i].id)
-        {
-          await APIDatabaseHelper.insertVehicle(vehicles[i]);
-        }
+        await APIDatabaseHelper.insertVehicle(vehicles[i]);
       }
       print(data.toString());
     }
   }
 
-  static Future<double?> getOdometerDistance(String id) async
+  static Future<double?> getSpeedometer(Vehicle vehicle) async
   {
+    if(!instance.isConnected())
+    {
+      return 0;
+    }
+
     Client client = Client();
 
-    final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/vehicles/$id/odometer"),
+    final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/vehicles/${vehicle.id}/${vehicle.make}/speedometer"),
+      headers: {
+        'Authorization': 'Bearer ${APIRequestHelper.instance.accessToken!.value}'
+      }
+    );
+
+    print("Respuesta velocimetro: ${response.statusCode}");
+    if(response.statusCode == 200)
+    {
+      var data = json.decode(response.body);
+      var value = data['speed'];
+
+      switch(value)
+      {
+        case int i: return i.toDouble();
+        case double d: return d;
+        case String s: return double.parse(s);
+      }
+    }
+
+    return null;
+  }
+
+  static Future<double?> getOdometer(Vehicle vehicle) async
+  {
+    if(!instance.isConnected())
+    {
+      return 0;
+    }
+
+    Client client = Client();
+
+    final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/vehicles/${vehicle.id}/odometer"),
       headers: {
         'Authorization': 'Bearer ${APIRequestHelper.instance.accessToken!.value}'
       }
@@ -124,9 +164,13 @@ class APIRequestHelper {
     return null;
   }
 
-  static Future<User?> getUser() async
+  static Future<void> loadUser() async
   {
-    
+    if(!instance.isConnected())
+    {
+      return;
+    }
+
     Client client = Client();
 
     final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/user"),
@@ -162,6 +206,11 @@ class APIRequestHelper {
   
   static Future<Vehicle?> getVehicle(String id) async
   {
+    if(!instance.isConnected())
+    {
+      return null;
+    }
+
     Client client = Client();
 
     final Response response = await client.get(Uri.parse("https://api.smartcar.com/v2.0/vehicles/$id"),
@@ -173,7 +222,7 @@ class APIRequestHelper {
     if(response.statusCode == 200)
     {
       var data = json.decode(response.body);
-      return Vehicle(userID: APIRequestHelper.instance.user.id, id: data['id'], make: data['make'], model: data['model'], year: data['year']);
+      return Vehicle(userID: APIRequestHelper.instance.user!.id, id: data['id'], make: data['make'], model: data['model'], year: data['year']);
     }
 
     print("Respuesta vehiculo $id: " + response.statusCode.toString());
