@@ -272,7 +272,11 @@ class APIRequestHelper {
     if(response.statusCode == 200)
     {
       var data = json.decode(response.body);
-      return data['percentRemaining'] * 100;
+      switch(data['percentRemaining'])
+      {
+        case int i: return i.toDouble() * 100;
+        case double d: return d * 100;
+      }
     };
 
     print("Respuesta bateria" + response.statusCode.toString());

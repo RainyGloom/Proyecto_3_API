@@ -196,7 +196,7 @@ class _MainPageState extends State<MainPage> {
         else
         {
           percent = await APIRequestHelper.getEVRemaing(APIRequestHelper.instance.vehicles[0]);
-          _currentFuelPercent = percent ?? 0;
+          _currentFuelPercent = percent ?? _currentFuelPercent;
         }
       }
     );
@@ -207,9 +207,9 @@ class _MainPageState extends State<MainPage> {
           double? distance = await APIRequestHelper.getOdometer(APIRequestHelper.instance.vehicles.first);
           if(_lastDistance != null)
           {
+            final deltaTime = DateTime.now().difference(_lastTime!);
             if(distance != null)
             {
-              final deltaTime = DateTime.now().difference(_lastTime!);
               if(distance != _lastDistance)
               {
                 double speed = (distance - _lastDistance!) / (deltaTime.inMilliseconds) * 3600000;
@@ -225,15 +225,15 @@ class _MainPageState extends State<MainPage> {
                   });
                 }
               }
-              else
+            }
+            else
+            {
+              if(deltaTime.inMinutes >= 2.5)
               {
-                if(deltaTime.inMinutes >= 5)
-                {
-                  setState(() {
-                    _lastTime = DateTime.now();
-                    _currentSpeed = GlobalSettings().convertSpeed(0); // conversión unidad medida
-                  });
-                }
+                setState(() {
+                  _lastTime = DateTime.now();
+                  _currentSpeed = GlobalSettings().convertSpeed(0); // conversión unidad medida
+                });
               }
             }
           }
