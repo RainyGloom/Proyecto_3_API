@@ -24,12 +24,12 @@ class _MainPageState extends State<MainPage> {
   double _maxSpeed = 0;
   DateTime? _lastTime;
   String _connect = "Conectar vehículo";
-  MeasurementUnit _unit = MeasurementUnit.kmh; // Unidad seleccionada (por defecto KM/H)
+  MeasurementUnit _unit = MeasurementUnit.kmh;
   Timer? _timer;
   FlutterRingtonePlayer? _player;
   Widget? _dialog;
 
-  @override
+    @override
   void initState() 
   {
     super.initState();
@@ -255,49 +255,127 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
+  void _showDevelopersInfo() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: GlobalSettings().foreColor,
+          title: const Text('Información de los desarrolladores', style: TextStyle(color: Colors.black),),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: AssetImage('assets/images/leandro.png'),
+                    radius: 30,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Leandro Carvajal',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                        Text('Edad: 22 años', style: TextStyle(color: Colors.black)),
+                        Text('Ramo: Programación para dispositivos móviles', style: TextStyle(color: Colors.black)),
+                        Text('Universidad: Universidad de Talca', style: TextStyle(color: Colors.black)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: AssetImage('assets/images/maria_paz.png'),
+                    radius: 30,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'María Paz Alarcón Fica',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                        Text('Edad: 21 años'),
+                        Text('Ramo: Programación para dispositivos móviles', style: TextStyle(color: Colors.black)),
+                        Text('Universidad: Universidad de Talca', style: TextStyle(color: Colors.black)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cerrar', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
     super.dispose();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: 
-          [
-            SizedBox(
-              width: 50,
-              height: 50,
-              child: Image.asset('assets/icons/drivex_icon.png')
-            ), 
-            Text('DriveX', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))
-          ]
+        title: Padding
+        ( 
+          padding: EdgeInsets.only(right: 70),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 50,
+                height: 50,
+                child: Image.asset('assets/icons/drivex_icon.png'),
+              ),
+              const Text(
+                'DriveX',
+                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
         ),
         backgroundColor: GlobalSettings().foreColor,
         centerTitle: true,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.info_outline, color: Colors.black),
+          onPressed: _showDevelopersInfo,
+        ),
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Card(
-            color: GlobalSettings().foreColor, 
+            color: GlobalSettings().foreColor,
             child: TextButton(
-              onPressed: _connectVehicle, 
+              onPressed: _connectVehicle,
               child: Text(
                 _connect,
-                style: TextStyle(color: Colors.black),
-              )
-            )
+                style: const TextStyle(color: Colors.black),
+              ),
+            ),
           ),
-          Text(''),
+          const SizedBox(height: 20),
           Center(
             child: Stack(
               alignment: Alignment.center,
@@ -399,7 +477,6 @@ class _MainPageState extends State<MainPage> {
               ),
             ],
           ),
-          
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -407,19 +484,25 @@ class _MainPageState extends State<MainPage> {
         selectedItemColor: GlobalSettings().foreColor,
         unselectedItemColor: GlobalSettings().foreColor,
         onTap: (index) {
-          if (index == 0) 
-          {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsPage(),),
-            ).then((_) 
-            {
-              _loadSettings(); // Recargar configuración al volver
+          if (index == 0) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SettingsPage(),
+              ),
+            ).then((_) {
+              _loadSettings();
             });
-          }else if (index == 1)
-          {
-            Navigator.push(context, MaterialPageRoute(builder: (context)=> const HistoryPage()));
-          }else if (index == 2)
-          {
-            Navigator.push(context, MaterialPageRoute(builder: (context)=> const ProfilePage()));
+          } else if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const HistoryPage()),
+            );
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfilePage()),
+            );
           }
         },
         items: const [

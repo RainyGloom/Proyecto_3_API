@@ -30,4 +30,5 @@ flutter:
   assets:
     - assets/database_create.txt
     - assets/icons/drivex_icon.png
+    - assets/images/
   uses-material-design: true
