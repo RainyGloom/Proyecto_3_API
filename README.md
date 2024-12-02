@@ -1,7 +1,12 @@
 ## DRIVEX - Aplicación de conducción monitoreada
 
 DRIVEX es una aplicación móvil desarrollada en Flutter que permite a los usuarios monitorear en tiempo real diversos datos de su vehículo inteligente utilizando la API de Smartcar. Con un diseño intuitivo y simplista, nuestra App está enfocada en proporcionar una experiencia confiable para obtener métricas esenciales como velocidad, consumo de combustible, alertas de exceso de velocidad, entre otras. La aplicación también permite personalizar configuraciones para una experiencia adaptada a las necesidades del usuario.
-________________________________________
+
+______________________________________
+## Video presentación
+
+Enlace: https://youtu.be/u3MBPV5AC8s
+______________________________________
 ## Características
 **Monitoreo en tiempo real:**
 
